@@ -34,8 +34,8 @@ def pil_to_input(pil_image, device='cuda'):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='')
-    # parser.add_argument('--recognition_model_id', type=str, default='minchul/cvlface_adaface_ir101_webface12m')
-    parser.add_argument('--recognition_model_id', type=str, default='minchul/cvlface_adaface_vit_base_kprpe_webface4m')
+    parser.add_argument('--recognition_model_id', type=str, default='minchul/cvlface_adaface_ir101_webface12m')
+    #parser.add_argument('--recognition_model_id', type=str, default='minchul/cvlface_adaface_vit_base_kprpe_webface4m')
     parser.add_argument('--aligner_id', type=str, default='minchul/cvlface_DFA_mobilenet')
     parser.add_argument('--data_root', type=str, default='./example')
     parser.add_argument('--threshold', type=float, default=0.3)
