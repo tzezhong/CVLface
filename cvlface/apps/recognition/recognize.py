@@ -24,27 +24,34 @@ import inspect
 import time # 导入 time 模块
 import shutil # 导入 shutil 模块
 
+# 从 config.py 导入所有常量和配置
+import config
+
 def pil_to_input(pil_image, device='cuda'):
     # input is a rgb image normalized.
-    trans = Compose([transforms.Resize((112, 112)), ToTensor(), Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])])
+    trans = Compose([
+        transforms.Resize((112, 112)),
+        ToTensor(),
+        Normalize(mean=config.NORMALIZE_MEAN, std=config.NORMALIZE_STD)
+    ])
     input = trans(pil_image).unsqueeze(0).to(device)
     return input
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='持续人脸识别服务')
-    parser.add_argument('--recognition_model_id', type=str, default='minchul/cvlface_adaface_ir101_webface12m',
+    parser.add_argument('--recognition_model_id', type=str, default=config.RECOGNITION_MODEL_ID,
                         help='用于人脸识别的模型ID。')
-    parser.add_argument('--aligner_id', type=str, default='minchul/cvlface_DFA_mobilenet',
+    parser.add_argument('--aligner_id', type=str, default=config.ALIGNER_ID,
                         help='用于人脸对齐的模型ID。')
-    parser.add_argument('--input_image_dir', type=str, default='input_dir', required=True,
+    parser.add_argument('--input_image_dir', type=str, required=True,
                         help='包含待查询图片的目录路径。这些图片将在处理后被移动到dealed_dir。')
-    parser.add_argument('--gallery_dir', type=str, default='gallery_images', required=True,
+    parser.add_argument('--gallery_dir', type=str, required=True,
                         help='包含固定图库图片的目录路径。这些图片不会被移动。')
-    parser.add_argument('--threshold', type=float, default=0.3,
+    parser.add_argument('--threshold', type=float, default=config.THRESHOLD,
                         help='判断是否匹配的相似度阈值。')
-    parser.add_argument('--output_csv', type=str, default='matched_results.csv',
+    parser.add_argument('--output_csv', type=str, default=config.OUTPUT_CSV_FILENAME,
                         help='识别结果输出的CSV文件路径。')
-    parser.add_argument('--scan_interval', type=int, default=5,
+    parser.add_argument('--scan_interval', type=int, default=config.SCAN_INTERVAL_SECONDS,
                         help='扫描新图片的时间间隔（秒）。')
     args = parser.parse_args()
 
@@ -76,7 +83,7 @@ if __name__ == '__main__':
 
     print(f"在 {args.gallery_dir} 中找到 {len(gallery_image_paths)} 张图库图片。")
 
-    batch_size = 200 # 可以根据您的GPU显存和模型大小调整这个值
+    batch_size = config.BATCH_SIZE # 从配置中获取批量大小
     
     # 循环遍历图库图片，分批处理并提取特征
     for i in range(0, len(gallery_image_paths), batch_size):
@@ -133,10 +140,12 @@ if __name__ == '__main__':
     del gallery_feats_data # 释放内存，因为特征已堆叠
 
     # 定义并创建处理后的输入图片目录，在 input_image_dir 中
-    dealed_dir_name = 'dealed_dir'
+    dealed_dir_name = config.DEALED_DIR_NAME # 从配置中获取目录名
     dealed_dir = os.path.join(args.input_image_dir, dealed_dir_name)
     os.makedirs(dealed_dir, exist_ok=True)
     print(f"处理后的查询图片将移至: {dealed_dir}")
+
+    print("程序初始化完毕，开始监控新图片...") # 新增的日志信息
 
     print(f"开始监控输入目录: {args.input_image_dir}，每隔 {args.scan_interval} 秒扫描一次新图片。")
 
@@ -259,13 +268,4 @@ if __name__ == '__main__':
             else:
                 print("本轮没有新的识别结果需要处理。")
 
-        else:
-            print(f"未检测到新图片。等待 {args.scan_interval} 秒后再次扫描...")
-
         time.sleep(args.scan_interval)
-
-
-
-
-
-
